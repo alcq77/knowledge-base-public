@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="日常检查系统、CPU、内存、磁盘、进程、网络、服务和日志的速查笔记。不绑定具体项目，以查看命令为主；部分命令需要 sudo 权限或对应工具已安装。 每组命令下方附解释或示例。示例 IP 192.0.2.10 为文档专用地址，PID、服务名和"><meta name="color-scheme" content="light dark"><title>Linux 常用系统状态查看命令 · 知行笔记</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
+<body data-base="../"><a class="skip-link" href="#main">跳到正文</a>
+<aside class="sidebar" id="sidebar"><a class="brand" href="../index.html"><span class="brand-mark">知</span><span>知行笔记<small>PERSONAL KNOWLEDGE BASE</small></span></a><button class="search-trigger" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><span>搜索知识库</span><kbd>Ctrl K</kbd></button><nav aria-label="知识库目录"><a class="home-link" href="../index.html"><span>⌂</span>知识库首页</a><div class="nav-label">知识目录</div><details class="nav-group" open><summary><span class="folder-icon">▤</span>Linux 运维<span class="group-count">2</span></summary><a class="nav-link active" href="../articles/linux-system-status-commands.html" aria-current="page"><span class="doc-icon">≡</span><span>Linux 常用系统状态查看命令</span></a><a class="nav-link" href="../articles/linux-service-check-start-troubleshooting.html"><span class="doc-icon">≡</span><span>Linux 服务检查、启动与排障</span></a></details></nav><div class="sidebar-footer"><span class="status-dot"></span>2 篇公开笔记<span>持续积累，随时查阅</span></div></aside><button class="mobile-backdrop" aria-label="关闭导航" hidden></button>
+<div class="workspace"><header class="topbar"><div class="breadcrumb"><button class="menu-toggle icon-button" aria-label="打开导航" aria-expanded="false">☰</button><a href="../index.html">知识库</a><span>/</span><span>Linux 运维</span></div><div class="top-actions"><span class="public-label"><span class="status-dot"></span>公开知识库</span><button class="theme-toggle icon-button" aria-label="切换深浅主题" title="切换深浅主题">◐</button><a class="github-link" href="https://github.com/alcq77/knowledge-base-public" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div></header>
+<div class="content-layout"><main id="main"><div class="article-head"><div class="eyebrow">Linux 运维</div><h1>Linux 常用系统状态查看命令</h1><div class="article-meta"><span class="author-avatar">知</span><span>知行笔记</span><span class="meta-dot">·</span><time>2026-10-27</time><span class="meta-dot">·</span><span>约 8 分钟阅读</span></div><div class="tag-row"><span class="tag">linux</span><span class="tag">operations</span><span class="tag">network</span><span class="tag">troubleshooting</span></div></div><article class="markdown-body"><p>日常检查系统、CPU、内存、磁盘、进程、网络、服务和日志的速查笔记。不绑定具体项目，以查看命令为主；部分命令需要 sudo 权限或对应工具已安装。</p>
+<p>每组命令下方附解释或示例。示例 IP <code>192.0.2.10</code> 为文档专用地址，PID、服务名和目录均需按实际情况替换；示例结果不代表当前服务器状态。</p>
+<h2 id="1-系统信息与运行时间">1. 系统信息与运行时间</h2>
+<pre><code class="hljs language-bash"><span class="hljs-built_in">cat</span> /etc/os-release   <span class="hljs-comment"># 系统发行版</span>
+<span class="hljs-built_in">uname</span> -a              <span class="hljs-comment"># 内核版本、主机架构等</span>
+<span class="hljs-built_in">date</span>                  <span class="hljs-comment"># 当前日期、时间与时区</span>
+timedatectl           <span class="hljs-comment"># 时间、时区和同步状态</span>
+<span class="hljs-built_in">uptime</span>                <span class="hljs-comment"># 运行时长、登录人数、平均负载</span>
+<span class="hljs-built_in">uptime</span> -s             <span class="hljs-comment"># 最近一次开机时间</span>
+</code></pre>
+<p>示例：<code>uptime</code> 显示 <code>up 23 days</code>，表示已连续运行约23天。末尾 <code>load average: 0.20, 0.35, 0.40</code> 分别为最近1、5、15分钟平均负载，不能当作20%、35%、40%的 CPU 使用率。负载需结合 CPU 核数、CPU 占用和 I/O 等待判断。</p>
+<h2 id="2-cpu与实时监控">2. CPU与实时监控</h2>
+<pre><code class="hljs language-bash"><span class="hljs-built_in">nproc</span>                 <span class="hljs-comment"># 当前进程可用的处理器数量</span>
+lscpu                 <span class="hljs-comment"># CPU型号、架构、逻辑CPU等</span>
+top                   <span class="hljs-comment"># 实时查看CPU、内存和进程</span>
+</code></pre>
+<p>示例：<code>nproc</code> 输出 <code>8</code>，表示当前进程可用的处理器数量为8。容器或资源限制可能使其与整台机器的逻辑 CPU 数不同。<code>top</code> 中可观察哪个进程的 <code>%CPU</code> 或 <code>%MEM</code> 较高。</p>
+<h3 id="top怎么退出">top怎么退出</h3>
+<table>
+<thead>
+<tr>
+<th>按键</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>退出 top</td>
+</tr>
+<tr>
+<td><code>Ctrl+C</code></td>
+<td>通常也可退出 top</td>
+</tr>
+</tbody>
+</table>
+<p><strong>两种方式都只是结束监控界面，不会停止被查看的进程或服务。</strong> 这是在前台运行 top 时的行为，不要将其他命令中的 Ctrl+C 理解为也不会影响其运行。</p>
+<h2 id="3-内存swap与系统采样">3. 内存、Swap与系统采样</h2>
+<pre><code class="hljs language-bash">free -h               <span class="hljs-comment"># 内存与Swap，按易读单位显示</span>
+vmstat 1 5            <span class="hljs-comment"># 每秒采样一次，共输出5次</span>
+</code></pre>
+<p>示例：<code>free -h</code> 中 <code>available</code> 为 <code>5.2Gi</code>，表示估计还有约5.2GiB可供新应用使用。判断内存余量优先看 <code>available</code>，不要只看 <code>free</code>，因为部分缓存可回收。</p>
+<p><code>vmstat 1 5</code> 第一行通常是开机以来的平均值，后续行反映采样期间的变化。<code>si/so</code> 持续较高可提示 Swap 换入换出活跃；<code>wa</code> 较高可提示 I/O 等待，但仍需结合其他指标分析。</p>
+<h2 id="4-查找进程与资源占用">4. 查找进程与资源占用</h2>
+<pre><code class="hljs language-bash"><span class="hljs-comment"># CPU占用最高的前10个进程，包含一行表头</span>
+ps -eo pid,ppid,<span class="hljs-built_in">comm</span>,%cpu,%mem --<span class="hljs-built_in">sort</span>=-%cpu | <span class="hljs-built_in">head</span> -n 11
+
+<span class="hljs-comment"># 内存占用最高的前10个进程</span>
+ps -eo pid,ppid,<span class="hljs-built_in">comm</span>,%cpu,%mem --<span class="hljs-built_in">sort</span>=-%mem | <span class="hljs-built_in">head</span> -n 11
+
+<span class="hljs-comment"># 查找命令行含java的进程</span>
+pgrep -af java
+
+<span class="hljs-comment"># 查看指定进程的父进程、启动时间、运行时长、状态及完整参数</span>
+ps -ww -p 15164 -o pid,ppid,lstart,etime,<span class="hljs-built_in">stat</span>,args
+</code></pre>
+<p>示例：若实际 PID 为24680，把最后一条中的 <code>15164</code> 换为 <code>24680</code>。<code>etime</code> 是运行时长，<code>lstart</code> 是启动时间，<code>ppid</code> 是父进程ID。<code>ps</code> 的 <code>%CPU</code> 通常反映进程生命周期内的 CPU 使用比例，不是与 top 完全相同的即时采样。</p>
+<p>按路径搜索不到进程时，可换进程名查询，例如 <code>pgrep -af node-red</code>；程序可能改写进程标题。需要同时核对监听端口的进程归属。</p>
+<h2 id="5-磁盘分区与目录占用">5. 磁盘、分区与目录占用</h2>
+<pre><code class="hljs language-bash"><span class="hljs-built_in">df</span> -h                            <span class="hljs-comment"># 各文件系统的容量和剩余空间</span>
+<span class="hljs-built_in">df</span> -i                            <span class="hljs-comment"># inode使用情况</span>
+lsblk -f                         <span class="hljs-comment"># 磁盘、分区、文件系统及挂载点</span>
+<span class="hljs-built_in">du</span> -sh /var/log                   <span class="hljs-comment"># 指定目录的总占用</span>
+<span class="hljs-built_in">du</span> -h --max-depth=1 . | <span class="hljs-built_in">sort</span> -h    <span class="hljs-comment"># 当前目录下一层占用，按大小升序</span>
+</code></pre>
+<p>示例：<code>df -h</code> 显示 <code>/</code> 使用率95%，再按具体目录执行 <code>du</code> 定位大目录。<code>du -sh /var/log</code> 返回 <code>2.3G /var/log</code>，表示日志目录占约2.3GB。若空间未满却无法创建文件，继续检查 <code>df -i</code> 是否 inode 耗尽。</p>
+<p><strong>df看文件系统是否满，du找目录占用。</strong> 大目录扫描可能较慢，先查具体目录；没有权限读取的内容会影响 du 的统计完整性。</p>
+<h2 id="6-ip路由端口和连接">6. IP、路由、端口和连接</h2>
+<pre><code class="hljs language-bash">ip -br addr                       <span class="hljs-comment"># 简洁显示网卡、状态和IP</span>
+ip route                          <span class="hljs-comment"># 路由与默认网关</span>
+<span class="hljs-built_in">sudo</span> ss -lntp                     <span class="hljs-comment"># TCP监听端口及进程</span>
+<span class="hljs-built_in">sudo</span> ss -lnup                     <span class="hljs-comment"># UDP端口及进程</span>
+ss -s                             <span class="hljs-comment"># 套接字状态汇总</span>
+<span class="hljs-built_in">sudo</span> ss -lntp <span class="hljs-string">&#x27;sport = :1880&#x27;</span>      <span class="hljs-comment"># 指定TCP监听端口</span>
+</code></pre>
+<p>示例：<code>ss</code> 显示 <code>*:1880</code>、<code>pid=15164</code>，可据此核对该端口所属进程。若显示 <code>127.0.0.1:1880</code>，则仅监听本机回环地址，外部无法直接通过网卡地址访问。查8080时，把最后一条的1880换成8080。</p>
+<h2 id="7-网络连通性与http响应">7. 网络连通性与HTTP响应</h2>
+<pre><code class="hljs language-bash">ping -c 4 192.0.2.10
+nc -vz -w 3 192.0.2.10 8080
+curl -I --connect-timeout 3 --max-time 5 http://127.0.0.1:1880/
+</code></pre>
+<p>示例：替换服务器IP后，第一条发送4次 Ping，第二条尝试连接8080端口，第三条检查本机1880的 HTTP HEAD 响应。<code>nc</code> 需已安装，选项以本机实现为准。</p>
+<ul>
+<li>Ping不通可能是禁用ICMP；Ping通不代表应用端口可用。</li>
+<li>TCP连通不代表认证或业务功能正常。</li>
+<li>返回200表示该请求成功；401、403、404等也说明收到了HTTP响应，需继续核对路径、权限和响应来源。</li>
+<li>接口不支持HEAD时，用 <code>curl -i URL</code> 对已确认的只读GET接口验证。</li>
+</ul>
+<h2 id="8-系统服务与日志">8. 系统服务与日志</h2>
+<pre><code class="hljs language-bash">systemctl --failed
+systemctl list-units --<span class="hljs-built_in">type</span>=service --state=running
+systemctl status sshd --no-pager -l
+journalctl -u sshd -n 100 --no-pager
+journalctl --since <span class="hljs-string">&quot;1 hour ago&quot;</span> --no-pager
+<span class="hljs-built_in">sudo</span> journalctl -k -b --no-pager
+</code></pre>
+<p>示例：<code>systemctl --failed</code> 列出失败单元；<code>status sshd</code> 查看SSH服务状态；<code>journalctl -u sshd</code> 查看它最近100条日志。服务名因系统不同可能是 <code>ssh</code>，应使用实际名称。日志是否完整取决于权限和保留策略。</p>
+<p>最后一条中的 <code>-k</code> 表示内核日志，<code>-b</code> 表示本次开机。手动通过 nohup 启动的程序不一定有对应 systemd 服务单元，需查询它实际重定向的日志文件。</p>
+<p>查看文件日志：</p>
+<pre><code class="hljs language-bash"><span class="hljs-built_in">tail</span> -n 100 /var/log/messages
+<span class="hljs-built_in">tail</span> -F /var/log/messages
+</code></pre>
+<p>示例：第一条读取最后100行，第二条持续跟踪，并在轮转后尝试继续跟踪同名文件。<code>Ctrl+C</code> 只退出 tail，不会停止产生日志的服务。部分系统没有 <code>/var/log/messages</code>，可使用 journalctl；应用日志则替换为实际路径。</p>
+<h2 id="9-登录重启与oom记录">9. 登录、重启与OOM记录</h2>
+<pre><code class="hljs language-bash">w
+last -n 10
+last -x -F | <span class="hljs-built_in">head</span> -n 20
+<span class="hljs-built_in">sudo</span> journalctl -k -b --no-pager |
+  grep -Ei <span class="hljs-string">&#x27;out of memory|oom-kill|killed process&#x27;</span>
+</code></pre>
+<p>示例：<code>w</code> 查看当前登录会话；<code>last</code> 查看历史登录；<code>last -x</code> 包含重启和关机记录。若内核日志出现 <code>Killed process 12345 (node)</code> 等OOM记录，应结合时间、PID和应用日志判断是否是目标服务。</p>
+<p>查不到记录不等于没发生过：日志可能没有保留，且这里的OOM命令只查本次开机。登录记录也不能单独证明某个用户停止了服务。</p>
+<h2 id="10-日常先记住这8条">10. 日常先记住这8条</h2>
+<pre><code class="hljs language-bash"><span class="hljs-built_in">uptime</span>                 <span class="hljs-comment"># 运行时间与平均负载</span>
+top                    <span class="hljs-comment"># 实时CPU与进程；q或Ctrl+C退出</span>
+free -h                <span class="hljs-comment"># 内存，重点看available</span>
+<span class="hljs-built_in">df</span> -h                  <span class="hljs-comment"># 文件系统空间</span>
+<span class="hljs-built_in">df</span> -i                  <span class="hljs-comment"># inode</span>
+<span class="hljs-built_in">sudo</span> ss -lntp          <span class="hljs-comment"># TCP监听端口及进程</span>
+systemctl --failed     <span class="hljs-comment"># 失败单元</span>
+journalctl -n 100       <span class="hljs-comment"># 最近100条系统日志</span>
+</code></pre>
+<p>示例：发现访问变慢，先用 <code>uptime</code>、<code>top</code>、<code>free -h</code> 查看负载和资源，再用 <code>ss</code> 确认端口、用日志定位错误，不要直接重启全部服务。</p>
+<h2 id="相关文档与来源">相关文档与来源</h2>
+<ul>
+<li><a href="linux-service-check-start-troubleshooting.html">Linux 服务检查、启动与排障</a>：进一步排查服务不可访问、绑定地址、防火墙和启动问题。</li>
+<li>来源：本会话2026-10-27关于Linux系统状态命令及top退出方式的问答。</li>
+<li>本次为文档整理，未在Linux服务器上执行上述命令或验证其当前状态。</li>
+</ul>
+</article><div class="article-end"><span>— 本文结束 —</span><a href="../index.html">返回知识库首页 ↗</a></div></main><aside class="toc" aria-label="本文目录"><div class="toc-label">本文目录</div><a class="toc-link level-2" href="#1-系统信息与运行时间">1. 系统信息与运行时间</a><a class="toc-link level-2" href="#2-cpu与实时监控">2. CPU与实时监控</a><a class="toc-link level-3" href="#top怎么退出">top怎么退出</a><a class="toc-link level-2" href="#3-内存swap与系统采样">3. 内存、Swap与系统采样</a><a class="toc-link level-2" href="#4-查找进程与资源占用">4. 查找进程与资源占用</a><a class="toc-link level-2" href="#5-磁盘分区与目录占用">5. 磁盘、分区与目录占用</a><a class="toc-link level-2" href="#6-ip路由端口和连接">6. IP、路由、端口和连接</a><a class="toc-link level-2" href="#7-网络连通性与http响应">7. 网络连通性与HTTP响应</a><a class="toc-link level-2" href="#8-系统服务与日志">8. 系统服务与日志</a><a class="toc-link level-2" href="#9-登录重启与oom记录">9. 登录、重启与OOM记录</a><a class="toc-link level-2" href="#10-日常先记住这8条">10. 日常先记住这8条</a><a class="toc-link level-2" href="#相关文档与来源">相关文档与来源</a><a class="back-top" href="#main">↑ 返回顶部</a></aside></div><footer class="page-footer">知行笔记<span>记录 · 理解 · 实践</span></footer></div>
+<dialog id="search-dialog" aria-labelledby="search-title"><div class="search-header"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><label id="search-title" class="sr-only" for="search-input">搜索公开文档</label><input id="search-input" type="search" placeholder="搜索标题、命令或正文…" autocomplete="off"><button class="close-search" aria-label="关闭搜索">Esc</button></div><div id="search-results" aria-live="polite"><p class="search-empty">输入关键词，查找笔记中的知识。</p></div><div class="search-footer">只搜索已公开的文档<span>Enter 打开首条结果 · Esc 关闭</span></div></dialog><div class="toast" role="status" aria-live="polite"></div></body></html>
