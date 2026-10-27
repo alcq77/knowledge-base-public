@@ -27,7 +27,7 @@
       if (!hits.length) { empty(`没有找到“${input.value.trim()}”相关内容，试试其他关键词。`); return; }
       results.replaceChildren();
       for (const doc of hits) {
-        const link = document.createElement('a'); link.className = 'search-result'; link.href = `${base}articles/${doc.id}.html`;
+        const link = document.createElement('a'); link.className = 'search-result'; link.href = `${base}articles/${doc.id}.html${doc.anchor ? `#${encodeURIComponent(doc.anchor)}` : ''}`;
         const small = document.createElement('small'); small.textContent = `${doc.category} · ${doc.updated}`;
         const title = document.createElement('strong'); title.textContent = doc.title;
         const excerpt = document.createElement('p');
@@ -68,4 +68,33 @@
     document.querySelectorAll('.category-filter').forEach(b => b.classList.toggle('selected', b === button));
     document.querySelectorAll('.document-card').forEach(card => { card.hidden = !!button.dataset.category && card.querySelector('.category-pill').textContent !== button.dataset.category; });
   }));
+  document.querySelectorAll('[data-viewer]').forEach(viewer => {
+    const panels = [...viewer.querySelectorAll('[data-preview-panel]')];
+    const selection = viewer.querySelector('[data-preview-select]');
+    const previous = viewer.querySelector('[data-preview-prev]'), next = viewer.querySelector('[data-preview-next]');
+    const show = id => {
+      const index = panels.findIndex(panel => panel.id === id);
+      if (index < 0) return;
+      panels.forEach((panel, i) => { panel.hidden = i !== index; });
+      selection.value = id;
+      previous.disabled = index === 0;
+      next.disabled = index === panels.length - 1;
+    };
+    const choose = offset => { const index = panels.findIndex(p => p.id === selection.value); show(panels[index + offset]?.id); };
+    previous.addEventListener('click', () => choose(-1));
+    next.addEventListener('click', () => choose(1));
+    selection.addEventListener('change', () => show(selection.value));
+    const followHash = () => { const id = decodeURIComponent(location.hash.slice(1)); if (panels.some(p => p.id === id)) { show(id); viewer.scrollIntoView({ block: 'start' }); } };
+    show(panels[0]?.id);
+    followHash();
+    window.addEventListener('hashchange', followHash);
+    let zoom = 100;
+    viewer.querySelectorAll('[data-zoom]').forEach(button => button.addEventListener('click', () => {
+      zoom = Math.max(50, Math.min(200, zoom + (button.dataset.zoom === 'in' ? 25 : -25)));
+      viewer.style.setProperty('--preview-zoom', zoom / 100);
+      viewer.querySelector('[data-zoom-label]').textContent = `${zoom}%`;
+      viewer.querySelector('[data-zoom="out"]').disabled = zoom === 50;
+      viewer.querySelector('[data-zoom="in"]').disabled = zoom === 200;
+    }));
+  });
 })();
